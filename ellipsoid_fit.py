@@ -108,6 +108,8 @@ def ellipsoid_plot(center, radii, rotation, ax, plot_axes=False, cage_color='b',
 
 # http://www.mathworks.com/matlabcentral/fileexchange/24693-ellipsoid-fit
 # for arbitrary axes
+# modified to return data that I find more useful
+# returns: center point, tranformation matrix, radius of resulting sphere
 def ellipsoid_fit(X):
     x = X[:, 0]
     y = X[:, 1]
@@ -138,12 +140,19 @@ def ellipsoid_fit(X):
     translation_matrix[3, :3] = center.T
 
     R = translation_matrix.dot(A).dot(translation_matrix.T)
-
+    
     evals, evecs = np.linalg.eig(R[:3, :3] / -R[3, 3])
     evecs = evecs.T
 
     radii = np.sqrt(1. / np.abs(evals))
     radii *= np.sign(evals)
+    
+    a, b, c = radii
+    radius = (a * b * c) ** (1. / 3.)
+    D = np.array([[radius/a, 0., 0.], [0., radius/b, 0.], [0., 0., radius/c]])
+    #http://www.cs.brandeis.edu/~cs155/Lecture_07_6.pdf
+    #affine transformation from ellipsoid to sphere (translation excluded)
+    transform = evecs.dot(D).dot(evecs.T)
 
-    return center, evecs, radii, v
+    return center, transform, radius
 
